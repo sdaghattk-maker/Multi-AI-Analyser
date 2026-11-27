@@ -3,9 +3,10 @@
 Backtest of the app's technical engine (analyze_market from app.py) on historical Binance candles.
 
 Usage examples:
-  python backtest.py --app app.py                                  # BTC/ETH/SOL, 1h+4h, 3 years
-  python backtest.py --app app.py --symbols BTCUSDT --tfs 1h --years 2 --step 4
-  python backtest.py --app app.py --synthetic                      # offline smoke test on random walks
+  python backtest.py --app app.py --tfs 1h --years 1 --step 6 --out bt_1h.csv
+  python backtest.py --app app.py --tfs 15m --years 1 --step 12 --out bt_15m.csv
+  python backtest.py --app app.py --tfs 5m --years 1 --step 24 --out bt_5m.csv
+  python backtest.py --app app.py --synthetic            # offline smoke test
 
 Needs: python 3.9+, numpy, pandas, requests, plotly, matplotlib (same as the app).
 """
@@ -16,7 +17,8 @@ import requests
 
 HOSTS = ["https://data-api.binance.vision", "https://data.binance.com",
          "https://api.binance.com", "https://api.binance.us"]
-IV_MS = {"15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
+IV_MS = {"5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000,
+         "4h": 14_400_000, "1d": 86_400_000}
 COLS = ["t", "open", "high", "low", "close", "volume", "ct", "qv", "n", "tb", "tq", "ig"]
 
 
@@ -118,10 +120,11 @@ def simulate(df, ti, plan, side, wait, maxbar, fee):
 
 def walk(analyze, df, symbol, tf, a):
     rows, busy, labels = [], -1, None
+    sh = 1 if a.drops_last else 0
     for ti in range(a.window - 1, len(df) - 2, a.step):
         if not a.overlap and ti <= busy:
             continue
-        w = df.iloc[ti - a.window + 1: ti + 1].reset_index(drop=True)
+        w = df.iloc[ti - a.window + 1 + sh: ti + 1 + sh].reset_index(drop=True)
         try:
             A = analyze(w)
         except Exception:
@@ -180,13 +183,15 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--app", default="app.py")
     p.add_argument("--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT")
-    p.add_argument("--tfs", default="1h,4h")
-    p.add_argument("--years", type=float, default=3)
+    p.add_argument("--tfs", default="1h")
+    p.add_argument("--years", type=float, default=1)
     p.add_argument("--window", type=int, default=500)
     p.add_argument("--step", type=int, default=6)
     p.add_argument("--wait", type=int, default=24)
     p.add_argument("--maxbar", type=int, default=150)
-    p.add_argument("--fee-bps", dest="fee_bps", type=float, default=5.0, help="per side, in basis points")
+    p.add_argument("--fee-bps", dest="fee_bps", type=float, default=7.0, help="per side, basis points (fee+slippage)")
+    p.add_argument("--drops-last", dest="drops_last", type=int, default=1,
+                   help="1 if analyze_market discards the last candle (df.iloc[:-1]); 0 otherwise")
     p.add_argument("--overlap", action="store_true", help="allow overlapping trades (default: one at a time)")
     p.add_argument("--synthetic", action="store_true")
     p.add_argument("--n", type=int, default=3000, help="candles per series for --synthetic")
@@ -226,6 +231,7 @@ def main():
             print(f"{v:9s} chosen side avgR={g.R.mean():+.3f} (n={len(g)}) | opposite side avgR={c.mean():+.3f} (n={len(c)})")
 
     print("\n=== Checklist items: avg R when the item passed vs failed (all filled trades) ===")
+    print("labels in order:", labels)
     rows = []
     for j, lab in enumerate(labels or []):
         ok, no = F[F[f"it{j}"] == 1].R, F[F[f"it{j}"] == 0].R
