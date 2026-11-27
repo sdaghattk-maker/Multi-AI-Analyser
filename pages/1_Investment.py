@@ -115,7 +115,7 @@ c1, c2, c3 = st.columns(3)
 c1.metric("BTC از MA150", f"{s['btc_vs_ma150'] * 100:+.1f}%" if s["btc_vs_ma150"] is not None else "-")
 c2.metric("BTC از MA200", f"{s['btc_vs_ma200'] * 100:+.1f}%" if s["btc_vs_ma200"] is not None else "-")
 c3.metric("نقد (هدف)", f"{cash_t * 100:.0f}%")
-st.caption(f"آخرین کندل بسته‌شده: {s['date'].date()}  |  بازتنظیم بعدی: {s['next_rebalance'].date()}  |  "
+st.caption(f"آخرین کندل بسته‌شده: {s['date'].date()}  |  قیمت BTC: {s['btc']:,.0f}  |  بازتنظیم بعدی: {s['next_rebalance'].date()}  |  "
            f"{'امروز روز بازتنظیم است' if s['is_rebalance_day'] else 'امروز فقط نگاه کن'}")
 
 rows = [dict(نماد=k.replace("USDT", ""), سیگنال=s["signal"][k], نوسان=f"{s['vol'][k] * 100:.0f}%",
