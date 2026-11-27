@@ -174,4 +174,13 @@ with st.expander("پرچم ریسک هوش مصنوعی (فقط ثبت می‌ش
         lg["date_ts"] = pd.to_datetime(lg["date"])
         fwd = (btc.shift(-7) / btc - 1)
         lg["بازده ۷ روز بعد BTC"] = [fwd.get(d, np.nan) for d in lg["date_ts"]]
-        st.dataframe(lg.drop(columns=["date_ts"]).head(20), hide_index=True,
+        st.dataframe(lg.drop(columns=["date_ts"]).head(20), hide_index=True, use_container_width=True)
+        done = lg.dropna(subset=["بازده ۷ روز بعد BTC"])
+        if len(done):
+            g = done.groupby("flag")["بازده ۷ روز بعد BTC"].agg(["count", "mean"]).rename(columns={"count": "تعداد", "mean": "میانگین بازده ۷ روز"})
+            st.dataframe(g, use_container_width=True)
+            st.caption("تا چند ده نمونه جمع نشده، این جدول را مبنای تصمیم نکن.")
+
+with st.expander("لاگ روزانه"):
+    if os.path.exists(LOG_P):
+        st.dataframe(pd.read_csv(LOG_P).tail(30), hide_index=True, use_container_width=True)
