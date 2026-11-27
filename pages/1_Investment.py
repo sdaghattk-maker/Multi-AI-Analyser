@@ -7,7 +7,11 @@ st.set_page_config(page_title="سرمایه‌گذاری روندی (آزمای�
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap');
 html, body, .stApp, .stMarkdown, label, p, h1, h2, h3, h4, button, input, textarea {font-family: Vazirmatn, Tahoma, sans-serif !important;}
-.stMarkdown p, .stMarkdown li, h1, h2, h3, label, .stCaption, [data-testid="stAlert"] p {direction: rtl; text-align: right;}
+.stMarkdown, .stMarkdown p, .stMarkdown li, h1, h2, h3, label, .stCaption, [data-testid="stCaptionContainer"],
+[data-testid="stAlert"], [data-testid="stAlert"] p, [data-testid="stMetric"], [data-testid="stMetric"] *,
+[data-testid="stExpander"] summary, [data-testid="stExpander"] p, .stSelectbox label, .stTextInput label, .stTextArea label,
+textarea, input {direction: rtl !important; text-align: right !important;}
+[data-testid="stMetricValue"], [data-testid="stMetricDelta"] {justify-content: flex-end;}
 .block-container {max-width: 900px; padding-top: 1.5rem;}
 pre, code, [data-testid="stDataFrame"] {direction: ltr !important; text-align: left !important;}
 .stButton button {width: 100%; border-radius: 12px; font-weight: 700;}
@@ -170,13 +174,4 @@ with st.expander("پرچم ریسک هوش مصنوعی (فقط ثبت می‌ش
         lg["date_ts"] = pd.to_datetime(lg["date"])
         fwd = (btc.shift(-7) / btc - 1)
         lg["بازده ۷ روز بعد BTC"] = [fwd.get(d, np.nan) for d in lg["date_ts"]]
-        st.dataframe(lg.drop(columns=["date_ts"]).head(20), hide_index=True, use_container_width=True)
-        done = lg.dropna(subset=["بازده ۷ روز بعد BTC"])
-        if len(done):
-            g = done.groupby("flag")["بازده ۷ روز بعد BTC"].agg(["count", "mean"]).rename(columns={"count": "تعداد", "mean": "میانگین بازده ۷ روز"})
-            st.dataframe(g, use_container_width=True)
-            st.caption("تا چند ده نمونه جمع نشده، این جدول را مبنای تصمیم نکن.")
-
-with st.expander("لاگ روزانه"):
-    if os.path.exists(LOG_P):
-        st.dataframe(pd.read_csv(LOG_P).tail(30), hide_index=True, use_container_width=True)
+        st.dataframe(lg.drop(columns=["date_ts"]).head(20), hide_index=True,
